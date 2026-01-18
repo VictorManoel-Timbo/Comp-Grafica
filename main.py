@@ -7,7 +7,7 @@ class App:
     def __init__(self):
         self._running = True
         self._display_surf = None
-        self.size = self.weight, self.height = 1024, 768
+        self.size = self.weight, self.height = 1280, 768
  
     def on_init(self):
         pygame.init()
@@ -24,8 +24,12 @@ class App:
         self._display_surf.fill((0, 0, 0))
         if self.drawer:
             self.drawer.draw_line_bress(150, 200, 200, 250)
-            self.drawer.draw_circunference_bress(200, 150, 50, (255, 255, 255))
-            self.drawer.draw_elipse(200, 150, 90, 60, (255, 255, 255))
+            self.drawer.draw_circunference_bress(200, 150, 50)
+            self.drawer.draw_elipse(200, 150, 90, 60)
+            self.drawer.draw_rectangle(100, 100, 150, 150, (255, 255, 255))
+            self.drawer.draw_triangle(400, 100, 350, 250, 450, 250, (0, 255, 0))
+            hex_pts = [(700, 100), (750, 130), (750, 180), (700, 210), (650, 180), (650, 130)]
+            self.drawer.draw_polygon(hex_pts, (255, 255, 0))
         pygame.display.flip()
     def on_cleanup(self):
         pygame.quit()
