@@ -2,15 +2,18 @@ import pygame
 from pygame.locals import *
 import sys
 from primitive import Primitive
- 
+import json
+
 class App:
     def __init__(self):
         self._running = True
         self._display_surf = None
         self.size = self.weight, self.height = 1280, 768
+        self.colors = None
  
     def on_init(self):
         pygame.init()
+        self.set_colors()
         self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
         self.drawer = Primitive(self._display_surf)
         self._running = True
@@ -23,14 +26,16 @@ class App:
     def on_render(self):
         self._display_surf.fill((0, 0, 0))
         if self.drawer:
+            self.drawer.draw_rectangle(100, 100, 150, 150, True, False, self.colors["white"], self.colors["blue"])
+            self.drawer.draw_triangle(400, 100, 350, 250, 450, 250, True, False, self.colors["green"], self.colors["blue"])
+
+            hex_pts = [(700, 100), (750, 130), (750, 180), (700, 210), (650, 180), (650, 130)]
+            self.drawer.draw_polygon(hex_pts, True, False, self.colors["light_gray"], self.colors["blue"])
+            self.drawer.draw_blooper(640, 384)
+            
             self.drawer.draw_line_bress(150, 200, 200, 250)
             self.drawer.draw_circunference_bress(200, 150, 50)
             self.drawer.draw_elipse(200, 150, 90, 60)
-            self.drawer.draw_rectangle(100, 100, 150, 150, (255, 255, 255))
-            self.drawer.draw_triangle(400, 100, 350, 250, 450, 250, (0, 255, 0))
-            hex_pts = [(700, 100), (750, 130), (750, 180), (700, 210), (650, 180), (650, 130)]
-            self.drawer.scanline_fill(hex_pts, (0, 0, 255))
-            self.drawer.draw_polygon(hex_pts, (255, 255, 0))
 
         pygame.display.flip()
     def on_cleanup(self):
@@ -48,6 +53,9 @@ class App:
             self.on_loop()
             self.on_render()
         self.on_cleanup()
+    def set_colors(self):
+        with open('colors.json', 'r') as f:
+            self.colors = json.load(f)
 
 if __name__ == "__main__" :
     theApp = App()

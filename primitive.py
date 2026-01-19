@@ -6,10 +6,11 @@ class Primitive:
         self.surface = surface
 
     def setPixel(self, x, y, color):
-        self.surface.set_at((x, y), color)
+        if 0 <= x < self.surface.get_width() and 0 <= y < self.surface.get_height():
+            self.surface.set_at((x, y), color)
 
     # Função para desenhar linhas usando o algoritmo de DDA
-    def draw_line_dda(self ,x1, y1, x2, y2, color=(255, 255, 255)):
+    '''def draw_line_dda(self ,x1, y1, x2, y2, color=(255, 255, 255)):
         x, y = x1, y1
         length = (x2 - x1)
 
@@ -24,62 +25,61 @@ class Primitive:
             x += dx
             y += dy
             self.setPixel(round(x), round(y), color)
-        pygame.display.flip()
+        pygame.display.flip()'''
 
     # Função para desenhar linhas usando o algoritmo de Bresenham
-    def draw_line_bress(self, x1, y1, x2, y2, color=(255, 255, 255)):
-        # 1. Calculamos as distâncias absolutas e a direção do passo
-        dx = abs(x2 - x1)
-        dy = abs(y2 - y1)
-        sx = 1 if x1 < x2 else -1
-        sy = 1 if y1 < y2 else -1
-        
-        x = x1
-        y = y1
-        self.setPixel(x, y, color)
+    def draw_line_bress(self, x0, y0, x1, y1, color=(255, 255, 255)):
+        # Flags para transformações
+        step = abs(y1 - y0) > abs(x1 - x0)
+        if step:
+            x0, y0 = y0, x0
+            x1, y1 = y1, x1
 
-        # 2. CASO A: Linha mais horizontal (o seu código original era este caso)
-        if dx >= dy:
-            d = 2 * dy - dx
-            incE = 2 * dy
-            incNE = 2 * (dy - dx)
-            
-            # Usamos != para que funcione mesmo indo para a esquerda
-            while x != x2:
-                if d <= 0:
-                    d += incE
-                else:
-                    d += incNE
-                    y += sy # Incrementa o Y na direção correta
-                x += sx     # Incrementa o X na direção correta
+        if x0 > x1:
+            x0, x1 = x1, x0
+            y0, y1 = y1, y0
+
+        dx = x1 - x0
+        dy = y1 - y0
+
+        ystep = 1
+        if dy < 0:
+            ystep = -1
+            dy = -dy
+
+        # Bresenham clássico
+        d = 2 * dy - dx
+        incE = 2 * dy
+        incNE = 2 * (dy - dx)
+
+        x = x0
+        y = y0
+
+        while x <= x1:
+            if step:
+                self.setPixel(y, x, color)
+            else:
                 self.setPixel(x, y, color)
 
-        # 3. CASO B: Linha mais vertical (resolve o problema das linhas verticais)
-        else:
-            d = 2 * dx - dy
-            incE = 2 * dx
-            incNE = 2 * (dx - dy)
-            
-            while y != y2:
-                if d <= 0:
-                    d += incE
-                else:
-                    d += incNE
-                    x += sx # Incrementa o X na direção correta
-                y += sy     # Incrementa o Y na direção correta
-                self.setPixel(x, y, color)
+            if d <= 0:
+                d += incE
+            else:
+                d += incNE
+                y += ystep
+
+            x += 1
 
     # Função para desenhar uma circunferência
-    def draw_circunference(self, xc, yc, radius, color=(255, 255, 255)):
+    '''def draw_circunference(self, xc, yc, radius, color=(255, 255, 255)):
         pi = 3.14
-        x1 = 0
-        y1 = 0
+        x0 = 0
+        y0 = 0
         
         for i in range (360):
-            self.setPixel(x1 + xc, y1 + yc, color)
+            self.setPixel(x0 + xc, y0 + yc, color)
             x = float((pi * i) / 180)
-            x1 = round(radius * np.cos(x))
-            y1 = round(radius * np.sin(x))
+            x0 = round(radius * np.cos(x))
+            y0 = round(radius * np.sin(x))'''
 
     # Função auxiliar para fazer a rasterização do círculo com base na simetria dos 8
     def _symmetry_circle(self, xc, yc, x, y, color):
@@ -93,10 +93,10 @@ class Primitive:
         self.setPixel(xc - y, yc - x, color) # 7 Octante
         self.setPixel(xc - x, yc - y, color) # 8 Octante
 
-    def draw_circunference_bress(self, xc, yc, raio, color=(255, 255, 255)):
+    def draw_circunference_bress(self, xc, yc, radius, is_fill=False, is_open_scene=False, color=(255, 255, 255), color_fill=(0, 0, 0)):
         x = 0
-        y = raio
-        d = 1 - raio
+        y = radius
+        d = 1 - radius
 
         self._symmetry_circle(xc, yc, x, y, color)
 
@@ -115,7 +115,7 @@ class Primitive:
         self.setPixel(xc + x, yc - y, color)
         self.setPixel(xc - x, yc - y, color)
 
-    def draw_elipse(self, xc, yc, a, b, color=(255, 255, 255)):
+    def draw_elipse(self, xc, yc, a, b, is_fill=False, is_open_scene=False, color=(255, 255, 255), color_fill=(0, 0, 0)):
         x = 0
         y = b
 
@@ -150,8 +150,11 @@ class Primitive:
                 y -= 1
             self._ellipse_points(xc, yc, x, y, color)
     
-    def draw_rectangle(self, x, y, width, height, color=(255, 255, 255)):
-        """Desenha um retângulo (ou quadrado) conectando 4 pontos."""
+    def draw_rectangle(self, x, y, width, height, is_fill=False, is_open_scene=False, color=(255, 255, 255), color_fill=(0, 0, 0)):
+        points = [(x, y), (x + width, y), (x + width, y + height), (x, y + height)]
+        if is_fill:
+            self.scanline_fill(points, color_fill)
+
         # Topo
         self.draw_line_bress(x, y, x + width, y, color)
         # Direita
@@ -161,35 +164,39 @@ class Primitive:
         # Esquerda
         self.draw_line_bress(x, y + height, x, y, color)
 
-    def draw_triangle(self, x1, y1, x2, y2, x3, y3, color=(255, 255, 255)):
-        """Desenha um triângulo conectando os 3 vértices."""
-        self.draw_line_bress(x1, y1, x2, y2, color)
-        self.draw_line_bress(x2, y2, x3, y3, color)
-        self.draw_line_bress(x3, y3, x1, y1, color)
+    def draw_triangle(self, x0, y0, x1, y1, x2, y2, is_fill=False, is_open_scene=False, color=(255, 255, 255), color_fill=(0, 0, 0)):
+        points = [(x0 , y0), (x1 , y1), (x2 , y2)]
+        if is_fill:
+            self.scanline_fill(points, color_fill)
 
-    def draw_polygon(self, points, color=(255, 255, 255)):
-        """Desenha polígonos genéricos como o Hexágono."""
+        self.draw_line_bress(x0, y0, x1, y1, color)
+        self.draw_line_bress(x1, y1, x2, y2, color)
+        self.draw_line_bress(x2, y2, x0, y0, color)
+
+    def draw_polygon(self, points, is_fill=False, is_open_scene=False, color=(255, 255, 255), color_fill=(0, 0, 0)):
+        if is_fill:
+            self.scanline_fill(points, color_fill)
+
         n = len(points)
         for i in range(n):
             p1 = points[i]
             p2 = points[(i + 1) % n] # O operador % garante que o último ponto ligue ao primeiro
             self.draw_line_bress(p1[0], p1[1], p2[0], p2[1], color)
 
-
-    def scanline_fill(self, pontos, cor_preenchimento):
+    def scanline_fill(self, points, color_fill):
         # Encontra Y mínimo e máximo
-        ys = [p[1] for p in pontos]
+        ys = [p[1] for p in points]
         y_min = min(ys)
         y_max = max(ys)
 
-        n = len(pontos)
+        n = len(points)
 
         for y in range(y_min, y_max):
-            intersecoes_x = []
+            intersections_x = []
 
             for i in range(n):
-                x0, y0 = pontos[i]
-                x1, y1 = pontos[(i + 1) % n]
+                x0, y0 = points[i]
+                x1, y1 = points[(i + 1) % n]
 
                 # Ignora arestas horizontais
                 if y0 == y1:
@@ -205,16 +212,48 @@ class Primitive:
 
                 # Calcula interseção
                 x = x0 + (y - y0) * (x1 - x0) / (y1 - y0)
-                intersecoes_x.append(x)
+                intersections_x.append(x)
 
             # Ordena interseções
-            intersecoes_x.sort()
+            intersections_x.sort()
 
             # Preenche entre pares
-            for i in range(0, len(intersecoes_x), 2):
-                if i + 1 < len(intersecoes_x):
-                    x_inicio = int(round(intersecoes_x[i]))
-                    x_fim = int(round(intersecoes_x[i + 1]))
+            for i in range(0, len(intersections_x), 2):
+                if i + 1 < len(intersections_x):
+                    x_inicio = int(round(intersections_x[i]))
+                    x_fim = int(round(intersections_x[i + 1]))
 
                     for x in range(x_inicio, x_fim + 1):
-                        self.setPixel(x, y, cor_preenchimento)
+                        self.setPixel(x, y, color_fill)
+
+    def draw_blooper(self, xc, yc):
+        color_black = (0, 0, 0)
+        color_white = (255, 255, 255)
+
+        # 1. CABEÇA
+        # Vértices: topo, base esquerda, base direita
+        self.draw_triangle(xc, yc - 180, xc - 150, yc - 30, xc + 150, yc - 30, True, False, color_white, color_white)
+
+        # 2. CORPO
+        # x, y (canto superior esquerdo), largura, altura
+        self.draw_rectangle(xc - 120, yc - 30, 240, 120, True, False, color_white, color_white)
+
+        # 3. MÁSCARA 
+        self.draw_elipse(xc, yc + 20, 90, 40, True, False, color_black, color_white)
+
+        # 4. OLHOS
+        self.draw_circunference_bress(xc - 40, yc + 20, 18, True, False, color_black, color_white)
+        self.draw_circunference_bress(xc + 40, yc + 20, 18, True, False, color_black, color_white)
+
+        # 5. TENTÁCULOS
+        # Tentáculo Esquerdo
+        tentaculo_esq = [(xc - 120, yc + 90), (xc - 150, yc + 160), (xc - 90, yc + 120)]
+        self.draw_polygon(tentaculo_esq, True, False, color_white, color_white)
+        
+        # Tentáculo Central
+        tentaculo_meio = [(xc - 30, yc + 90), (xc, yc + 170), (xc + 30, yc + 90)]
+        self.draw_polygon(tentaculo_meio, True, False, color_white, color_white)
+        
+        # Tentáculo Direito
+        tentaculo_dir = [(xc + 120, yc + 90), (xc + 150, yc + 160), (xc + 90, yc + 120)]
+        self.draw_polygon(tentaculo_dir, True, False, color_white, color_white)
