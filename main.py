@@ -29,7 +29,9 @@ class App:
             self.drawer.draw_rectangle(100, 100, 150, 150, (255, 255, 255))
             self.drawer.draw_triangle(400, 100, 350, 250, 450, 250, (0, 255, 0))
             hex_pts = [(700, 100), (750, 130), (750, 180), (700, 210), (650, 180), (650, 130)]
+            self.drawer.scanline_fill(hex_pts, (0, 0, 255))
             self.drawer.draw_polygon(hex_pts, (255, 255, 0))
+
         pygame.display.flip()
     def on_cleanup(self):
         pygame.quit()
