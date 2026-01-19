@@ -1,5 +1,6 @@
 import pygame 
 import numpy as np
+import json
 
 class Primitive: 
     def __init__(self, surface):
@@ -93,7 +94,7 @@ class Primitive:
         self.setPixel(xc - y, yc - x, color) # 7 Octante
         self.setPixel(xc - x, yc - y, color) # 8 Octante
 
-    def draw_circunference_bress(self, xc, yc, radius, is_fill=False, is_open_scene=False, color=(255, 255, 255), color_fill=(0, 0, 0)):
+    def draw_circunference_bress(self, xc, yc, radius, color=(255, 255, 255), color_fill=(0, 0, 0)):
         x = 0
         y = radius
         d = 1 - radius
@@ -115,7 +116,7 @@ class Primitive:
         self.setPixel(xc + x, yc - y, color)
         self.setPixel(xc - x, yc - y, color)
 
-    def draw_elipse(self, xc, yc, a, b, is_fill=False, is_open_scene=False, color=(255, 255, 255), color_fill=(0, 0, 0)):
+    def draw_elipse(self, xc, yc, a, b, color=(255, 255, 255), color_fill=(0, 0, 0)):
         x = 0
         y = b
 
@@ -150,11 +151,7 @@ class Primitive:
                 y -= 1
             self._ellipse_points(xc, yc, x, y, color)
     
-    def draw_rectangle(self, x, y, width, height, is_fill=False, is_open_scene=False, color=(255, 255, 255), color_fill=(0, 0, 0)):
-        points = [(x, y), (x + width, y), (x + width, y + height), (x, y + height)]
-        if is_fill:
-            self.scanline_fill(points, color_fill)
-
+    def draw_rectangle(self, x, y, width, height, color=(255, 255, 255), color_fill=(0, 0, 0)):   
         # Topo
         self.draw_line_bress(x, y, x + width, y, color)
         # Direita
@@ -164,19 +161,12 @@ class Primitive:
         # Esquerda
         self.draw_line_bress(x, y + height, x, y, color)
 
-    def draw_triangle(self, x0, y0, x1, y1, x2, y2, is_fill=False, is_open_scene=False, color=(255, 255, 255), color_fill=(0, 0, 0)):
-        points = [(x0 , y0), (x1 , y1), (x2 , y2)]
-        if is_fill:
-            self.scanline_fill(points, color_fill)
-
+    def draw_triangle(self, x0, y0, x1, y1, x2, y2, color=(255, 255, 255), color_fill=(0, 0, 0)):
         self.draw_line_bress(x0, y0, x1, y1, color)
         self.draw_line_bress(x1, y1, x2, y2, color)
         self.draw_line_bress(x2, y2, x0, y0, color)
 
-    def draw_polygon(self, points, is_fill=False, is_open_scene=False, color=(255, 255, 255), color_fill=(0, 0, 0)):
-        if is_fill:
-            self.scanline_fill(points, color_fill)
-
+    def draw_polygon(self, points, color=(255, 255, 255), color_fill=(0, 0, 0)):
         n = len(points)
         for i in range(n):
             p1 = points[i]
@@ -225,35 +215,3 @@ class Primitive:
 
                     for x in range(x_inicio, x_fim + 1):
                         self.setPixel(x, y, color_fill)
-
-    def draw_blooper(self, xc, yc):
-        color_black = (0, 0, 0)
-        color_white = (255, 255, 255)
-
-        # 1. CABEÇA
-        # Vértices: topo, base esquerda, base direita
-        self.draw_triangle(xc, yc - 180, xc - 150, yc - 30, xc + 150, yc - 30, True, False, color_white, color_white)
-
-        # 2. CORPO
-        # x, y (canto superior esquerdo), largura, altura
-        self.draw_rectangle(xc - 120, yc - 30, 240, 120, True, False, color_white, color_white)
-
-        # 3. MÁSCARA 
-        self.draw_elipse(xc, yc + 20, 90, 40, True, False, color_black, color_white)
-
-        # 4. OLHOS
-        self.draw_circunference_bress(xc - 40, yc + 20, 18, True, False, color_black, color_white)
-        self.draw_circunference_bress(xc + 40, yc + 20, 18, True, False, color_black, color_white)
-
-        # 5. TENTÁCULOS
-        # Tentáculo Esquerdo
-        tentaculo_esq = [(xc - 120, yc + 90), (xc - 150, yc + 160), (xc - 90, yc + 120)]
-        self.draw_polygon(tentaculo_esq, True, False, color_white, color_white)
-        
-        # Tentáculo Central
-        tentaculo_meio = [(xc - 30, yc + 90), (xc, yc + 170), (xc + 30, yc + 90)]
-        self.draw_polygon(tentaculo_meio, True, False, color_white, color_white)
-        
-        # Tentáculo Direito
-        tentaculo_dir = [(xc + 120, yc + 90), (xc + 150, yc + 160), (xc + 90, yc + 120)]
-        self.draw_polygon(tentaculo_dir, True, False, color_white, color_white)
