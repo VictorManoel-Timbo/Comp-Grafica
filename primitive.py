@@ -10,24 +10,6 @@ class Primitive:
         if 0 <= x < self.surface.get_width() and 0 <= y < self.surface.get_height():
             self.surface.set_at((x, y), color)
 
-    # Função para desenhar linhas usando o algoritmo de DDA
-    '''def draw_line_dda(self ,x1, y1, x2, y2, color=(255, 255, 255)):
-        x, y = x1, y1
-        length = (x2 - x1)
-
-        if length <= (y2 - y1):
-            length = y2 - y1
-
-        dx = (x2 - x1)/float(length)
-        dy = (y2 - y1)/float(length)
-        self.surface.set_at((round(x), round(y)), color)
-
-        for i in range(length):
-            x += dx
-            y += dy
-            self.setPixel(round(x), round(y), color)
-        pygame.display.flip()'''
-
     # Função para desenhar linhas usando o algoritmo de Bresenham
     def draw_line_bress(self, x0, y0, x1, y1, color=(255, 255, 255)):
         # Flags para transformações
@@ -69,18 +51,6 @@ class Primitive:
                 y += ystep
 
             x += 1
-
-    # Função para desenhar uma circunferência
-    '''def draw_circunference(self, xc, yc, radius, color=(255, 255, 255)):
-        pi = 3.14
-        x0 = 0
-        y0 = 0
-        
-        for i in range (360):
-            self.setPixel(x0 + xc, y0 + yc, color)
-            x = float((pi * i) / 180)
-            x0 = round(radius * np.cos(x))
-            y0 = round(radius * np.sin(x))'''
 
     # Função auxiliar para fazer a rasterização do círculo com base na simetria dos 8
     def _symmetry_circle(self, xc, yc, x, y, color):
