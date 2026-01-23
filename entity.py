@@ -1,5 +1,6 @@
 import random
 import transform
+import math
 
 class Entity:
     def __init__(self, entity_type, x, y, colors):
@@ -14,6 +15,7 @@ class Entity:
         self.colors = colors
         self.color = self._set_color()
         self.model = self._set_model()
+        self.radius = 20  # para cálculo de colisão
 
     def _set_color(self):
         if self.type == "scissors": return self.colors["red"]
@@ -28,7 +30,49 @@ class Entity:
         }
         return models[self.type]
 
-    def update(self, width, height):
+    def _check_collision(self, other):
+        """Verifica se há colisão entre duas entidades"""
+        dx = self.x - other.x
+        dy = self.y - other.y
+        distance = math.sqrt(dx**2 + dy**2)
+        return distance < (self.radius + other.radius)
+
+    def _resolve_collision(self, other):
+        """Resolve a colisão aplicando as regras do jogo"""
+        rules = {
+            "stone": {"scissors": True, "paper": False},
+            "paper": {"stone": True, "scissors": False},
+            "scissors": {"paper": True, "stone": False}
+        }
+        
+        # Verifica se a entidade atual vence
+        if rules[self.type].get(other.type, False):
+            # self vence, other se transforma
+            other.type = self.type
+            other.color = self._get_color_for_type(self.type, other.colors)
+            other.model = self._get_model_for_type(self.type)
+        else:
+            # other vence, self se transforma
+            self.type = other.type
+            self.color = self._get_color_for_type(other.type, self.colors)
+            self.model = self._get_model_for_type(other.type)
+
+    def _get_color_for_type(self, entity_type, colors):
+        """Retorna a cor baseada no tipo"""
+        if entity_type == "scissors": return colors["red"]
+        if entity_type == "paper": return colors["white"]
+        return colors["medium_gray"]
+
+    def _get_model_for_type(self, entity_type):
+        """Retorna o modelo baseado no tipo"""
+        models = {
+            "scissors": [(0, -20), (20, 20), (-20, 20)],
+            "paper": [(-20, -20), (20, -20), (20, 20), (-20, 20)],
+            "stone": [(10, -17), (20, 0), (10, 17), (-10, 17), (-20, 0), (-10, -17)]
+        }
+        return models[entity_type]
+
+    def update(self, width, height, entities=None):
         # Movimentação e Rotação
         self.x += self.dx
         self.y += self.dy
@@ -46,6 +90,12 @@ class Entity:
             self.dx = random.uniform(-3, 3)
             self.dy = random.uniform(-3, 3)
             self.timer = random.randint(60, 180)
+
+        # Verificar colisões com outras entidades
+        if entities is not None:
+            for other in entities:
+                if other is not self and self._check_collision(other):
+                    self._resolve_collision(other)
 
     def draw(self, drawer, m_viewport=None):
         # 1. Matriz de transformação do objeto (Mundo)

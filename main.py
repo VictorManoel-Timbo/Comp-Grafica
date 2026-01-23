@@ -33,11 +33,24 @@ class App:
 
         for _ in range(10):
             self.entities.append(
-                Entity(random.choice(["stone", "paper", "scissors"]), 
+                Entity("scissors", 
                 random.randint(100, 1100), 
                 random.randint(100, 600), 
                 self.colors)
             )
+            self.entities.append(
+                Entity("paper", 
+                random.randint(100, 1100), 
+                random.randint(100, 600), 
+                self.colors)
+            )
+            self.entities.append(
+                Entity("stone", 
+                random.randint(100, 1100), 
+                random.randint(100, 600), 
+                self.colors)
+            )
+
         
         pygame.time.delay(3000)
         self._running = True
@@ -48,8 +61,7 @@ class App:
 
     def on_loop(self):   
         for entity in self.entities:
-            entity.update(self.weight, self.height)     
-
+            entity.update(self.weight, self.height, self.entities)
     def on_render(self):
         self._display_surf.fill(self.colors["gold"])
         mundo = (0, 0, self.weight, self.height)
