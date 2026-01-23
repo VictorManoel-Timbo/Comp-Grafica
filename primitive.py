@@ -1,6 +1,5 @@
-import pygame 
 import numpy as np
-import json
+import math
 
 class Primitive: 
     def __init__(self, surface):
@@ -64,7 +63,14 @@ class Primitive:
         self.setPixel(xc - y, yc - x, color) # 7 Octante
         self.setPixel(xc - x, yc - y, color) # 8 Octante
 
-    def draw_circunference_bress(self, xc, yc, radius, color=(255, 255, 255), color_fill=(0, 0, 0)):
+    def draw_circunference_bress(self, xc, yc, radius, color=(255, 255, 255), color_fill=None):
+        if color_fill is not None:
+            points = []
+            for i in range(0, 360, 5): # Aproximação de 5 em 5 graus
+                rad = math.radians(i)
+                points.append((xc + radius * math.cos(rad), yc + radius * math.sin(rad)))
+            self.scanline_fill([(int(p[0]), int(p[1])) for p in points], color_fill)
+
         x = 0
         y = radius
         d = 1 - radius
@@ -86,7 +92,14 @@ class Primitive:
         self.setPixel(xc + x, yc - y, color)
         self.setPixel(xc - x, yc - y, color)
 
-    def draw_elipse(self, xc, yc, a, b, color=(255, 255, 255), color_fill=(0, 0, 0)):
+    def draw_elipse(self, xc, yc, a, b, color=(255, 255, 255), color_fill=None):
+        if color_fill is not None:
+            points = []
+            for i in range(0, 360, 5):
+                rad = math.radians(i)
+                points.append((xc + a * math.cos(rad), yc + b * math.sin(rad)))
+            self.scanline_fill([(int(p[0]), int(p[1])) for p in points], color_fill)
+
         x = 0
         y = b
 
@@ -121,26 +134,24 @@ class Primitive:
                 y -= 1
             self._ellipse_points(xc, yc, x, y, color)
     
-    def draw_rectangle(self, x, y, width, height, color=(255, 255, 255), color_fill=(0, 0, 0)):   
-        # Topo
-        self.draw_line_bress(x, y, x + width, y, color)
-        # Direita
-        self.draw_line_bress(x + width, y, x + width, y + height, color)
-        # Baixo
-        self.draw_line_bress(x + width, y + height, x, y + height, color)
-        # Esquerda
-        self.draw_line_bress(x, y + height, x, y, color)
+    def draw_rectangle(self, x, y, width, height, color=(255, 255, 255), color_fill=None):
+        points = [(x, y), (x + width, y), (x + width, y + height), (x, y + height)]
+        self.draw_polygon(points, color, color_fill)
 
-    def draw_triangle(self, x0, y0, x1, y1, x2, y2, color=(255, 255, 255), color_fill=(0, 0, 0)):
-        self.draw_line_bress(x0, y0, x1, y1, color)
-        self.draw_line_bress(x1, y1, x2, y2, color)
-        self.draw_line_bress(x2, y2, x0, y0, color)
+    def draw_triangle(self, x0, y0, x1, y1, x2, y2, color=(255, 255, 255), color_fill=None):
+        points = [(x0, y0), (x1, y1), (x2, y2)]
+        self.draw_polygon(points, color, color_fill)
 
-    def draw_polygon(self, points, color=(255, 255, 255), color_fill=(0, 0, 0)):
+    def draw_polygon(self, points, color=(255, 255, 255), color_fill=None):
+        if color_fill is not None:
+            pts_int = [(int(p[0]), int(p[1])) for p in points]
+            self.scanline_fill(pts_int, color_fill)
+        
+        # Desenha o contorno
         n = len(points)
         for i in range(n):
             p1 = points[i]
-            p2 = points[(i + 1) % n] # O operador % garante que o último ponto ligue ao primeiro
+            p2 = points[(i + 1) % n]
             self.draw_line_bress(p1[0], p1[1], p2[0], p2[1], color)
 
     def scanline_fill(self, points, color_fill):
