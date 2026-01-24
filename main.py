@@ -31,7 +31,7 @@ class App:
         opening.draw_logo()
         pygame.display.flip()
 
-        for _ in range(10):
+        for _ in range(20):
             self.entities.append(
                 Entity("scissors", 
                 random.randint(100, 1100), 
