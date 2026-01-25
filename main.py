@@ -3,6 +3,7 @@ from pygame.locals import *
 import sys
 import json
 import numpy as np
+import math
 from primitive import Primitive
 from open_scene import OpenScene
 import transform
@@ -62,18 +63,52 @@ class App:
     def on_loop(self):   
         for entity in self.entities:
             entity.update(self.weight, self.height, self.entities)
+        
     def on_render(self):
+        # 1. Limpa a tela principal 
         self._display_surf.fill(self.colors["gold"])
-        mundo = (0, 0, self.weight, self.height)
+        
+        # 2. Desenha entidades na cena principal 
+        for ent in self.entities:
+            ent.draw(self.drawer)
 
-        viewport_mini = (10, 10, 210, 130) 
-        m_viewport = transform.janela_viewport(mundo, viewport_mini)
+        # CONFIGURAÇÃO DA VIEWPORT (MINIMAPA) 
+        # Limites da Viewport: xmin, ymin, xmax, ymax 
+        v_xmin, v_ymin, v_xmax, v_ymax = 10, 10, 210, 130
+        janela_mundo = (0, 0, self.weight, self.height)
 
-        for entity in self.entities:
-            entity.draw(self.drawer, m_viewport)
+        # 3. "Limpa" a área do minimapa 
+        pygame.draw.rect(self._display_surf, self.colors["gold"], (v_xmin, v_ymin, 200, 120))
+        self.drawer.draw_rectangle(v_xmin, v_ymin, 200, 120, self.colors["white"])
 
-        # Borda do minimapa
-        self.drawer.draw_rectangle(10, 10, 200, 120, self.colors["white"])
+        # 4. Matriz de mapeamento Mundo -> Viewport
+        m_viewport = transform.janela_viewport(janela_mundo, (v_xmin, v_ymin, v_xmax, v_ymax))
+
+        for ent in self.entities:
+            # Pega os pontos transformados da entidade no mundo
+            m_ent = transform.cria_transformacao()
+            m_ent = transform.multiplica_matrizes(transform.rotacao(ent.angle), m_ent)
+            m_ent = transform.multiplica_matrizes(transform.translacao(ent.x, ent.y), m_ent)
+            pts_mundo = transform.aplica_transformacao(m_ent, ent.model)
+            
+            # Mapeia os pontos do mundo para a Viewport 
+            pts_mini = transform.aplica_transformacao(m_viewport, pts_mundo)
+
+            # 5. APLICAÇÃO DO RECORTE (Cohen-Sutherland) 
+            # Itera sobre cada aresta do polígono
+            for i in range(len(pts_mini)):
+                p0 = pts_mini[i]
+                p1 = pts_mini[(i + 1) % len(pts_mini)] # Próximo ponto (fecha o polígono)
+                
+                visivel, nx0, ny0, nx1, ny1 = transform.cohen_sutherland(
+                    p0[0], p0[1], p1[0], p1[1], 
+                    v_xmin, v_ymin, v_xmax, v_ymax
+                )
+                
+                # Se a linha for visível (total ou parcialmente), desenha o segmento recortado
+                if visivel:
+                    self.drawer.draw_line_bress(int(nx0), int(ny0), int(nx1), int(ny1), ent.color)
+
         pygame.display.flip()
 
     def on_cleanup(self):
