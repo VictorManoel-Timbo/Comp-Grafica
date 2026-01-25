@@ -33,23 +33,25 @@ class OpenScene:
 
     def draw_logo(self):
         cx, cy = 640, 384
-        off_y = -140 # ajuste de vertical (Mudar posteriormente)
+        off_y = -70  # Ajuste vertical
         
         b_color = tuple(self.colors["offset_black"])
         c_fill = tuple(self.colors["azure_mist"])
         d_fill = tuple(self.colors["sky_blue"])
         e_fill = tuple(self.colors["deep_ocean"])
 
-        p_norte, p_sul = (cx, cy - 125 + off_y), (cx, cy + 125 + off_y)
-        p_leste, p_oeste = (cx + 250, cy + off_y), (cx - 250, cy + off_y)
-        p_ne, p_se = (cx + 165, cy - 90 + off_y), (cx + 165, cy + 90 + off_y)
-        p_so, p_no = (cx - 165, cy + 90 + off_y), (cx - 165, cy - 90 + off_y)
+        # Pontos principais da coroa 
+        p_norte, p_sul = (cx, cy - 62 + off_y), (cx, cy + 62 + off_y)
+        p_leste, p_oeste = (cx + 125, cy + off_y), (cx - 125, cy + off_y)
+        p_ne, p_se = (cx + 82, cy - 45 + off_y), (cx + 82, cy + 45 + off_y)
+        p_so, p_no = (cx - 82, cy + 45 + off_y), (cx - 82, cy - 45 + off_y)
         
-        p_ponta_oso = (cx - 285, cy + 125 + off_y) 
-        p_ponta_sos = (cx - 122, cy + 245 + off_y)
-        p_ponta_sse = (cx + 122, cy + 245 + off_y)
-        p_ponta_sel = (cx + 285, cy + 125 + off_y)
-        p_culatra = (cx, cy + 400 + off_y)
+        # Pontas e base 
+        p_ponta_oso = (cx - 142, cy + 62 + off_y) 
+        p_ponta_sos = (cx - 61, cy + 122 + off_y)
+        p_ponta_sse = (cx + 61, cy + 122 + off_y)
+        p_ponta_sel = (cx + 142, cy + 62 + off_y)
+        p_culatra = (cx, cy + 200 + off_y)
 
         oct_pts = [p_norte, p_ne, p_leste, p_se, p_sul, p_so, p_oeste, p_no]
 
@@ -69,22 +71,26 @@ class OpenScene:
 
         pygame.display.flip()
 
+        # Preenchimentos 
         self.boundary_fill(cx, cy + off_y, c_fill, b_color) # coroa
 
-        self.boundary_fill(cx - 230, cy + 105 + off_y, d_fill, b_color)
-        self.boundary_fill(cx - 95, cy + 155 + off_y, d_fill, b_color)
-        self.boundary_fill(cx + 95, cy + 155 + off_y, d_fill, b_color)
-        self.boundary_fill(cx + 230, cy + 105 + off_y, d_fill, b_color)
-        self.boundary_fill(cx - 185, cy + 150 + off_y, d_fill, b_color)
-        self.boundary_fill(cx, cy + 200 + off_y, d_fill, b_color)
-        self.boundary_fill(cx + 185, cy + 150 + off_y, d_fill, b_color)
+        # base da coroa
+        self.boundary_fill(cx - 115, cy + 52 + off_y, d_fill, b_color)
+        self.boundary_fill(cx - 47, cy + 77 + off_y, d_fill, b_color)
+        self.boundary_fill(cx + 47, cy + 77 + off_y, d_fill, b_color)
+        self.boundary_fill(cx + 115, cy + 52 + off_y, d_fill, b_color)
+        self.boundary_fill(cx - 92, cy + 75 + off_y, d_fill, b_color)
+        self.boundary_fill(cx, cy + 100 + off_y, d_fill, b_color)
+        self.boundary_fill(cx + 92, cy + 75 + off_y, d_fill, b_color)
 
-        self.boundary_fill(cx - 130, cy + 250 + off_y, e_fill, b_color)
-        self.boundary_fill(cx, cy + 300 + off_y, e_fill, b_color)
-        self.boundary_fill(cx + 130, cy + 250 + off_y, e_fill, b_color)
+        # ponta
+        self.boundary_fill(cx - 65, cy + 125 + off_y, e_fill, b_color)
+        self.boundary_fill(cx, cy + 150 + off_y, e_fill, b_color)
+        self.boundary_fill(cx + 65, cy + 125 + off_y, e_fill, b_color)
 
+        # Texto 
         pygame.font.init()
-        font = pygame.font.SysFont("Arial", 36, bold=True)
+        font = pygame.font.SysFont("Arial", 18, bold=True)
         
         text_surface = font.render("PARCELADOS PICTURY", True, tuple(self.colors["dark_gray"])) 
         text_rect = text_surface.get_rect(center=(cx, cy + off_y))

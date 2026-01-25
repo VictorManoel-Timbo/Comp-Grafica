@@ -1,5 +1,5 @@
 import random
-import transform
+from transform import Transform
 import math
 
 class Entity:
@@ -34,7 +34,6 @@ class Entity:
         return models[self.type]
 
     def _check_collision(self, other):
-        """Verifica se há colisão entre duas entidades usando hitbox quadrada"""
         # Hitbox como quadrado centrado na posição da entidade
         half_size = self.hitbox_size / 2
         
@@ -53,7 +52,6 @@ class Entity:
                 self_top < other_bottom and self_bottom > other_top)
 
     def _resolve_collision(self, other):
-        """Resolve a colisão aplicando as regras do jogo"""
         rules = {
             "stone": {"scissors": True, "paper": False},
             "paper": {"stone": True, "scissors": False},
@@ -76,13 +74,11 @@ class Entity:
             other.dy = self_dy
 
     def _get_color_for_type(self, entity_type, colors):
-        """Retorna a cor baseada no tipo"""
         if entity_type == "scissors": return colors["red"]
         if entity_type == "paper": return colors["white"]
         return colors["medium_gray"]
 
     def _get_model_for_type(self, entity_type):
-        """Retorna o modelo baseado no tipo"""
         models = {
             "scissors": self.scissors,
             "paper": self.paper,
@@ -117,12 +113,12 @@ class Entity:
 
     def draw(self, drawer, m_viewport=None):
         # 1. Matriz de transformação do objeto (Mundo)
-        m = transform.cria_transformacao()
-        m = transform.multiplica_matrizes(transform.rotacao(self.angle), m)
-        m = transform.multiplica_matrizes(transform.translacao(self.x, self.y), m)
+        m = Transform.create_transformation()
+        m = Transform.multiply_matrices(Transform.rotation(self.angle), m)
+        m = Transform.multiply_matrices(Transform.translation(self.x, self.y), m)
         
         # 2. Aplicar transformação para o espaço do mundo
-        pts_trans = transform.aplica_transformacao(m, self.model)
+        pts_trans = Transform.apply_transformation(m, self.model)
         pts_int = [(int(p[0]), int(p[1])) for p in pts_trans]
         
         # 3. Desenhar na tela principal
@@ -130,6 +126,6 @@ class Entity:
 
         # 4. Desenhar no minimapa (se a matriz de viewport for fornecida)
         if m_viewport is not None:
-            pts_mini = transform.aplica_transformacao(m_viewport, pts_trans)
+            pts_mini = Transform.apply_transformation(m_viewport, pts_trans)
             pts_mini_int = [(int(p[0]), int(p[1])) for p in pts_mini]
             drawer.scanline_fill(pts_mini_int, self.color)
