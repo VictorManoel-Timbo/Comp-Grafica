@@ -17,6 +17,7 @@ class App:
         self._display_surf = None
         self.size = self.weight, self.height = 1280, 768
         self.colors = None
+        self.textures = None
         self.clock = pygame.time.Clock()
         self.entities = []
         self.state = "OPENING" 
@@ -25,11 +26,11 @@ class App:
     def on_init(self):
         pygame.init()
         self.load_colors()
+        self.load_textures()
 
         self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
         self.drawer = Primitive(self._display_surf)
 
-        # Instancia o menu
         self.menu = Menu(self._display_surf, self.colors)
 
         opening = OpenScene(self._display_surf, self.colors)
@@ -71,12 +72,16 @@ class App:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
                     self.menu.navigate(-1)
+
                 elif event.key == pygame.K_DOWN:
                     self.menu.navigate(1)
+
                 elif event.key == pygame.K_SPACE:
                     selection = self.menu.get_selection()
+
                     if selection == "Iniciar":
                         self.state = "SIMULATION"
+                        
                     elif selection == "Sair":
                         self._running = False
 
@@ -89,50 +94,14 @@ class App:
         if self.state == "MENU":
             self.menu.draw() 
             pygame.display.flip()
+
         elif self.state == "SIMULATION":
-            # 1. Limpa a tela principal 
             self._display_surf.fill(self.colors["black"])
             
-            # 2. Desenha entidades na cena principal 
             for ent in self.entities:
                 ent.draw(self.drawer)
 
-            # CONFIGURAÇÃO DA VIEWPORT (MINIMAPA) 
-            # Limites da Viewport: xmin, ymin, xmax, ymax 
-            v_xmin, v_ymin, v_xmax, v_ymax = 10, 10, 210, 130
-            world_window = (0, 0, self.weight, self.height)
-
-            # 3. "Limpa" a área do minimapa 
-            pygame.draw.rect(self._display_surf, self.colors["black"], (v_xmin, v_ymin, 200, 120))
-            self.drawer.draw_rectangle(v_xmin, v_ymin, 200, 120, self.colors["white"])
-
-            # 4. Matriz de mapeamento Mundo -> Viewport
-            m_viewport = Transform.window_viewport(world_window, (v_xmin, v_ymin, v_xmax, v_ymax))
-
-            for ent in self.entities:
-                # Pega os pontos transformados da entidade no mundo
-                m_ent = Transform.create_transformation()
-                m_ent = Transform.multiply_matrices(Transform.rotation(ent.angle), m_ent)
-                m_ent = Transform.multiply_matrices(Transform.translation(ent.x, ent.y), m_ent)
-                pts_mundo = Transform.apply_transformation(m_ent, ent.model)
-                
-                # Mapeia os pontos do mundo para a Viewport 
-                pts_mini = Transform.apply_transformation(m_viewport, pts_mundo)
-
-                # 5. APLICAÇÃO DO RECORTE (Cohen-Sutherland) 
-                # Itera sobre cada aresta do polígono
-                for i in range(len(pts_mini)):
-                    p0 = pts_mini[i]
-                    p1 = pts_mini[(i + 1) % len(pts_mini)] # Próximo ponto (fecha o polígono)
-                    
-                    visivel, nx0, ny0, nx1, ny1 = Transform.cohen_sutherland(
-                        p0[0], p0[1], p1[0], p1[1], 
-                        v_xmin, v_ymin, v_xmax, v_ymax
-                    )
-                    
-                    # Se a linha for visível (total ou parcialmente), desenha o segmento recortado
-                    if visivel:
-                        self.drawer.draw_line_bress(int(nx0), int(ny0), int(nx1), int(ny1), ent.color)
+            self.draw_minimap()
 
             pygame.display.flip()
 
@@ -153,6 +122,51 @@ class App:
             self.on_loop()
             self.on_render()
         self.on_cleanup()
+
+    def draw_minimap(self):
+        v_xmin, v_ymin, v_xmax, v_ymax = 10, 10, 210, 130
+        world_window = (0, 0, self.weight, self.height)
+
+        pygame.draw.rect(self._display_surf, self.colors["black"], (v_xmin, v_ymin, 200, 120))
+        self.drawer.draw_rectangle(v_xmin, v_ymin, 200, 120, self.colors["white"])
+
+        m_viewport = Transform.window_viewport(world_window, (v_xmin, v_ymin, v_xmax, v_ymax))
+
+        for ent in self.entities:
+            m_ent = Transform.create_transformation()
+            m_ent = Transform.multiply_matrices(Transform.rotation(ent.angle), m_ent)
+            m_ent = Transform.multiply_matrices(Transform.translation(ent.x, ent.y), m_ent)
+            pts_mundo = Transform.apply_transformation(m_ent, ent.model)
+            
+            pts_mini = Transform.apply_transformation(m_viewport, pts_mundo)
+
+            self.render_clipped_entity(pts_mini, ent.color, (v_xmin, v_ymin, v_xmax, v_ymax))
+
+    def render_clipped_entity(self, points, color, viewport_limits):
+        v_xmin, v_ymin, v_xmax, v_ymax = viewport_limits
+        
+        for i in range(len(points)):
+            p0 = points[i]
+            p1 = points[(i + 1) % len(points)] 
+            
+            visivel, nx0, ny0, nx1, ny1 = Transform.cohen_sutherland(
+                p0[0], p0[1], p1[0], p1[1], 
+                v_xmin, v_ymin, v_xmax, v_ymax
+            )
+            
+            if visivel:
+                self.drawer.draw_line_bress(int(nx0), int(ny0), int(nx1), int(ny1), color)
+
+    def load_textures(self):
+        try:
+            with open('textures.json', 'r') as f:
+                self.textures = json.load(f)
+        except:
+            self.textures = {
+                "table": "img/table.png",
+                "stone": "img/",
+                "paper": "img/"
+            }
 
     def load_colors(self):
         try:
