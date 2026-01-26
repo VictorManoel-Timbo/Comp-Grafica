@@ -55,6 +55,12 @@ class OpenScene:
 
         oct_pts = [p_norte, p_ne, p_leste, p_se, p_sul, p_so, p_oeste, p_no]
 
+        self.drawer.draw_circunference_bress(cx, cy + off_y + 50, 180, b_color)
+        self.drawer.draw_circunference_bress(cx, cy + off_y + 50, 160, b_color)
+
+        self.boundary_fill(cx + 165, cy + off_y + 40, tuple(self.colors["gold"]), b_color) # anel
+        self.boundary_fill(cx, cy + off_y + 40, tuple(self.colors["steel_blue"]), b_color)
+
         # coroa
         self.drawer.draw_polygon(oct_pts, b_color)
 

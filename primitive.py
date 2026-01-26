@@ -7,7 +7,7 @@ class Primitive:
 
     def setPixel(self, x, y, color):
         if 0 <= x < self.surface.get_width() and 0 <= y < self.surface.get_height():
-            self.surface.set_at((x, y), color)
+            self.surface.set_at((int(x), int(y)), color)
 
     # Função para desenhar linhas usando o algoritmo de Bresenham
     def draw_line_bress(self, x0, y0, x1, y1, color=(255, 255, 255)):
