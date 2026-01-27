@@ -1,3 +1,4 @@
+import pygame
 import numpy as np
 import math
 
@@ -10,7 +11,6 @@ class Primitive:
             self.surface.set_at((int(x), int(y)), color)
 
     def draw_line_bress(self, x0, y0, x1, y1, color=(255, 255, 255)):
-        # Flags para transformações
         step = abs(y1 - y0) > abs(x1 - x0)
         if step:
             x0, y0 = y0, x0
@@ -62,12 +62,18 @@ class Primitive:
         self.setPixel(xc - x, yc - y, color) # 8 Octante
 
     def draw_circunference_bress(self, xc, yc, radius, color=(255, 255, 255), color_fill=None, texture=None):
-        if color_fill is not None:
+        if color_fill is not None or texture is not None:
             points = []
-            for i in range(0, 360, 5): # Aproximação de 5 em 5 graus
+            for i in range(0, 360, 5):
                 rad = math.radians(i)
                 points.append((xc + radius * math.cos(rad), yc + radius * math.sin(rad)))
-            self.scanline_fill([(int(p[0]), int(p[1])) for p in points], color_fill)
+
+            if texture:
+                uvs = self._generate_uvs(points)
+                self.scaline_texture(points, uvs, texture)
+
+            elif color_fill:
+                self.scanline_fill([(int(p[0]), int(p[1])) for p in points], color_fill)
 
         x = 0
         y = radius
@@ -77,10 +83,10 @@ class Primitive:
 
         while (y > x):
             if (d < 0):
-                d+=2*x + 3
+                d += 2 * x + 3
             else:
-                d+=2*(x-y) + 5
-                y-=1
+                d += 2 * (x - y) + 5
+                y -= 1
             x+=1
             self._symmetry_circle(xc, yc, x, y, color)
 
@@ -91,57 +97,63 @@ class Primitive:
         self.setPixel(xc - x, yc - y, color)
 
     def draw_elipse(self, xc, yc, a, b, color=(255, 255, 255), color_fill=None, texture=None):
-        if color_fill is not None:
+        if color_fill is not None or texture is not None:
             points = []
             for i in range(0, 360, 5):
                 rad = math.radians(i)
                 points.append((xc + a * math.cos(rad), yc + b * math.sin(rad)))
-            self.scanline_fill([(int(p[0]), int(p[1])) for p in points], color_fill)
+            
+            if texture:
+                uvs = self._generate_uvs(points)
+                self.scaline_texture(points, uvs, texture)
+            
+            elif color_fill:
+                self.scanline_fill([(int(p[0]), int(p[1])) for p in points], color_fill)
 
         x = 0
         y = b
 
-        d1 = b*b - a*a*b + 0.25 * a*a
+        d1 = b * b - a * a * b + 0.25 * a * a
         self._ellipse_points(xc, yc, x, y, color)
 
         # Região 1
-        while (b*b * x) <= (a*a * y):
+        while (b * b * x) <= (a * a * y):
             if d1 < 0:
-                d1 += b*b * (2*x + 3)
+                d1 += b * b * (2 * x + 3)
                 x += 1
             else:
-                d1 += b*b * (2*x + 3) + a*a * (-2*y + 2)
+                d1 += b * b * (2 * x + 3) + a * a * (-2 * y + 2)
                 x += 1
                 y -= 1
             self._ellipse_points(xc, yc, x, y, color)
 
         # Região 2
-        d2 = (
-            b*b * (x + 0.5) * (x + 0.5) +
-            a*a * (y - 1) * (y - 1) -
-            a*a * b*b
-        )
+        d2 = (b * b * (x + 0.5) * (x + 0.5) + a * a * (y - 1) * (y - 1) - a * a * b * b)
 
         while y > 0:
             if d2 > 0:
-                d2 += a*a * (-2*y + 3)
+                d2 += a * a * (-2 * y + 3)
                 y -= 1
             else:
-                d2 += b*b * (2*x + 2) + a*a * (-2*y + 3)
+                d2 += b * b * (2 * x + 2) + a * a * (-2 * y + 3)
                 x += 1
                 y -= 1
             self._ellipse_points(xc, yc, x, y, color)
     
     def draw_rectangle(self, x, y, width, height, color=(255, 255, 255), color_fill=None, texture=None):
         points = [(x, y), (x + width, y), (x + width, y + height), (x, y + height)]
-        self.draw_polygon(points, color, color_fill)
+        self.draw_polygon(points, color, color_fill, texture)
 
     def draw_triangle(self, x0, y0, x1, y1, x2, y2, color=(255, 255, 255), color_fill=None, texture=None):
         points = [(x0, y0), (x1, y1), (x2, y2)]
-        self.draw_polygon(points, color, color_fill)
+        self.draw_polygon(points, color, color_fill, texture)
 
-    def draw_polygon(self, points, color=(255, 255, 255), color_fill=None, texture=None):
-        if color_fill is not None:
+    def draw_polygon(self, points, color=(255, 255, 255), color_fill=None, uvs=None, texture=None):
+        if texture is not None:
+            use_uvs = uvs if uvs is not None else self._generate_uvs(points)
+            self.scaline_texture(points, use_uvs, texture)
+
+        elif color_fill is not None:
             pts_int = [(int(p[0]), int(p[1])) for p in points]
             self.scanline_fill(pts_int, color_fill)
         
@@ -188,7 +200,8 @@ class Primitive:
                         self.setPixel(x, y, color_fill)
 
     def scaline_texture(self, points, uvs, texture):
-        tex_w, tex_h = texture.get_width(), texture.get_height()
+        tex = pygame.image.load(texture).convert()
+        tex_w, tex_h = tex.get_width(), tex.get_height()
         n = len(points)
 
         ys = [p[1] for p in points]
@@ -245,5 +258,17 @@ class Primitive:
                     ty = int(v * (tex_h - 1))
 
                     if 0 <= tx < tex_w and 0 <= ty < tex_h:
-                        cor = texture.get_at((tx, ty))
+                        cor = tex.get_at((tx, ty))
                         self.setPixel(x, y, cor)
+    
+    def _generate_uvs(self, points):
+        if not points: return []
+        xs = [p[0] for p in points]
+        ys = [p[1] for p in points]
+        x_min, x_max = min(xs), max(xs)
+        y_min, y_max = min(ys), max(ys)
+        
+        width = x_max - x_min if x_max != x_min else 1
+        height = y_max - y_min if y_max != y_min else 1
+        
+        return [((p[0] - x_min) / width, (p[1] - y_min) / height) for p in points]

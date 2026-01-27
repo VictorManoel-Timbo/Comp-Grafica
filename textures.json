@@ -1,5 +1,5 @@
 {
     "table": "img/table.png",
-    "stone": "img/",
-    "paper": "img/"
+    "stone": "img/stone.png",
+    "paper": "img/paper.jpg"
 }

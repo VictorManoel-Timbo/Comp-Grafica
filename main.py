@@ -31,7 +31,7 @@ class App:
         self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
         self.drawer = Primitive(self._display_surf)
 
-        self.menu = Menu(self._display_surf, self.colors)
+        self.menu = Menu(self._display_surf, self.colors, self.textures)
 
         opening = OpenScene(self._display_surf, self.colors)
         self._display_surf.fill(self.colors["black"]) 
@@ -164,8 +164,8 @@ class App:
         except:
             self.textures = {
                 "table": "img/table.png",
-                "stone": "img/",
-                "paper": "img/"
+                "stone": "img/stone.png",
+                "paper": "img/paper.jpg"
             }
 
     def load_colors(self):

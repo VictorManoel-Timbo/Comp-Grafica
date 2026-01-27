@@ -3,10 +3,11 @@ from primitive import Primitive
 from transform import Transform
 
 class Menu:
-    def __init__(self, surface, colors):
+    def __init__(self, surface, colors,  textures):
         self.surface = surface
         self.drawer = Primitive(self.surface)
         self.colors = colors
+        self.textures = textures
         self.selected_index = 0  
         self.options = ["Iniciar", "Sair"]
         self.button_width = 200
@@ -18,25 +19,29 @@ class Menu:
         self.scissors = [(-1, 5), (-10, 5), (-10, 15),(-1,20),(-10,20),(-10,40),(0,20),(10,40),(10,20),(1,20),(10,15),(10,5),(1,5),(0,20)]
         self.stone = [(10, -17), (20, 0), (10, 17), (-10, 17), (-20, 0), (-10, -17)]
 
+        self.uvs_stone = self.drawer._generate_uvs(self.stone)
+        self.uvs_paper = self.drawer._generate_uvs(self.paper)
+        self.uvs_scissors = self.drawer._generate_uvs(self.scissors)
+
     def draw(self):
         self.surface.fill(self.colors["black"])
         self.angle += 0.02
 
         background_shapes = [
             # Lado Esquerdo
-            (self.stone, (200, 200), self.colors["medium_gray"], 1),
-            (self.paper, (200, 550), self.colors["white"], -1),
+            (self.stone, (200, 200), None, 1, self.uvs_stone, self.textures["stone"]),
+            (self.paper, (200, 550), None, -1, self.uvs_paper, self.textures["paper"]),
             
             # Lado Direito
-            (self.scissors, (1080, 200), self.colors["red"], 1),
-            (self.stone, (1080, 550), self.colors["medium_gray"], -1),
+            (self.scissors, (1080, 200), self.colors["red"], 1, None, None),
+            (self.stone, (1080, 550), None, -1, self.uvs_stone, self.textures["stone"]),
             
             # Centro (Topo e Baixo)
-            (self.paper, (640, 100), self.colors["white"], 1),
-            (self.scissors, (640, 600), self.colors["red"], -1)
+            (self.paper, (640, 100), None, 1, self.uvs_paper, self.textures["paper"]),
+            (self.scissors, (640, 600), self.colors["red"], -1, None, None)
         ]
 
-        for model_points, pos, fill_color, direction in background_shapes:
+        for model_points, pos, fill_color, direction, uvs, tex in background_shapes:
             m = Transform.create_transformation()
             
             m = Transform.multiply_matrices(Transform.scale(4, 4), m)
@@ -44,7 +49,7 @@ class Menu:
             m = Transform.multiply_matrices(Transform.translation(pos[0], pos[1]), m)
             
             transformed_pts = Transform.apply_transformation(m, model_points)
-            self.drawer.draw_polygon(transformed_pts, self.colors["black"], fill_color)
+            self.drawer.draw_polygon(transformed_pts, self.colors["black"], fill_color, uvs, tex)
             
         self._draw_ui()
 

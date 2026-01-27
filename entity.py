@@ -119,7 +119,6 @@ class Entity:
         
         # 2. Aplicar transformação para o espaço do mundo
         pts_trans = Transform.apply_transformation(m, self.model)
-        pts_int = [(int(p[0]), int(p[1])) for p in pts_trans]
         
         # 3. Desenhar na tela principal
         drawer.draw_polygon(pts_trans, self.colors["black"], self.color)
