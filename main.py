@@ -3,7 +3,6 @@ from pygame.locals import *
 import sys
 import json
 import numpy as np
-import math
 from primitive import Primitive
 from open_scene import OpenScene
 from transform import Transform
@@ -26,11 +25,11 @@ class App:
     def on_init(self):
         pygame.init()
         self.load_colors()
-        self.load_textures()
 
         self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
-        self.drawer = Primitive(self._display_surf)
+        self.load_textures()
 
+        self.drawer = Primitive(self._display_surf)
         self.menu = Menu(self._display_surf, self.colors, self.textures)
 
         opening = OpenScene(self._display_surf, self.colors)
@@ -136,8 +135,8 @@ class App:
             m_ent = Transform.create_transformation()
             m_ent = Transform.multiply_matrices(Transform.rotation(ent.angle), m_ent)
             m_ent = Transform.multiply_matrices(Transform.translation(ent.x, ent.y), m_ent)
-            pts_mundo = Transform.apply_transformation(m_ent, ent.model)
             
+            pts_mundo = Transform.apply_transformation(m_ent, ent.model)
             pts_mini = Transform.apply_transformation(m_viewport, pts_mundo)
 
             self.render_clipped_entity(pts_mini, ent.color, (v_xmin, v_ymin, v_xmax, v_ymax))
@@ -158,15 +157,21 @@ class App:
                 self.drawer.draw_line_bress(int(nx0), int(ny0), int(nx1), int(ny1), color)
 
     def load_textures(self):
-        try:
-            with open('textures.json', 'r') as f:
-                self.textures = json.load(f)
-        except:
-            self.textures = {
-                "table": "img/table.png",
-                "stone": "img/stone.png",
-                "paper": "img/paper.jpg"
-            }
+        paths = {
+            "table": "img/table.png",
+            "stone": "img/stone.png",
+            "paper": "img/paper.jpg"
+        }
+        
+        self.textures = {}
+        for name, path in paths.items():
+            try:
+                surf = pygame.image.load(path).convert()
+                self.textures[name] = surf
+            except:
+                fallback = pygame.Surface((64, 64))
+                fallback.fill(self.colors["orange"]) 
+                self.textures[name] = fallback
 
     def load_colors(self):
         try:

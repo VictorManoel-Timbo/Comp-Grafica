@@ -200,8 +200,7 @@ class Primitive:
                         self.setPixel(x, y, color_fill)
 
     def scaline_texture(self, points, uvs, texture):
-        tex = pygame.image.load(texture).convert()
-        tex_w, tex_h = tex.get_width(), tex.get_height()
+        tex_w, tex_h = texture.get_width(), texture.get_height()
         n = len(points)
 
         ys = [p[1] for p in points]
@@ -258,7 +257,7 @@ class Primitive:
                     ty = int(v * (tex_h - 1))
 
                     if 0 <= tx < tex_w and 0 <= ty < tex_h:
-                        cor = tex.get_at((tx, ty))
+                        cor = texture.get_at((tx, ty))
                         self.setPixel(x, y, cor)
     
     def _generate_uvs(self, points):
