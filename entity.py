@@ -70,8 +70,8 @@ class Entity:
             other_dy = other.dy
             self.dx = other_dy
             self.dy = other_dx
-            other.dx = self_dx
-            other.dy = self_dy
+            other.dx = self_dy
+            other.dy = self_dx
 
     def _get_color_for_type(self, entity_type, colors):
         if entity_type == "scissors": return colors["red"]
