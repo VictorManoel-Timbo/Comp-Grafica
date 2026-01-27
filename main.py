@@ -9,6 +9,7 @@ from transform import Transform
 import random
 from entity import Entity
 from menu import Menu
+from mixer import Mixer
 
 class App:
     def __init__(self):
@@ -41,7 +42,7 @@ class App:
         pygame.time.delay(3000)
         self.state = "MENU"
 
-        for _ in range(10):
+        for _ in range(25):
             self.entities.append(
                 Entity("scissors", 
                 random.randint(100, 1100), 
@@ -114,8 +115,14 @@ class App:
         
         pygame.display.set_caption("Pedra Papel Tesoura")
         self.clock.tick(60)
-
+        mixer = Mixer()
+        simulation_loaded = False
+        mixer.load_music("music/8b0rws1ViH.mp3")
         while( self._running ):
+            if self.state == "SIMULATION" and not simulation_loaded:
+                simulation_loaded = True
+                mixer.stop_music
+                mixer.load_music("music/PJb7DdPD00.mp3")
             for event in pygame.event.get():
                 self.on_event(event)
             self.on_loop()
