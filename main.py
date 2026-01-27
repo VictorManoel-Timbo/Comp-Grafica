@@ -85,23 +85,37 @@ class App:
                     elif selection == "Sair":
                         self._running = False
 
+        if self.state == "PAUSED":
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                self._running = False
+
     def on_loop(self):   
         if self.state == "SIMULATION":
             for entity in self.entities:
                 entity.update(self.weight, self.height, self.entities)
+            
+            if self.check_victory():
+                self.state = "PAUSED" 
         
     def on_render(self):
         if self.state == "MENU":
             self.menu.draw() 
             pygame.display.flip()
 
-        elif self.state == "SIMULATION":
+        elif self.state == "SIMULATION" or self.state == "PAUSED":
             self._display_surf.fill(self.colors["black"])
             
             for ent in self.entities:
                 ent.draw(self.drawer)
 
             self.draw_minimap()
+
+            if self.state == "PAUSED":
+                font = pygame.font.SysFont("Arial", 50, bold=True)
+                winner = self.entities[0].type.upper()
+                text = font.render(f"{winner} VENCEU!!!  [Espaço para Sair]", True, self.colors["gold"])
+                rect = text.get_rect(center=(self.weight // 2, self.height // 2))
+                self._display_surf.blit(text, rect)
 
             pygame.display.flip()
 
@@ -129,6 +143,17 @@ class App:
             self.on_render()
         self.on_cleanup()
 
+    def check_victory(self):
+        if not self.entities:
+            return False
+        
+        first_type = self.entities[0].type
+        for ent in self.entities:
+            if ent.type != first_type:
+                return False 
+        
+        return True 
+    
     def draw_minimap(self):
         # CONFIGURAÇÃO DA VIEWPORT 1: Mundo todo (ESQUERDA) 
         v1_limits = (10, 10, 210, 130)
