@@ -118,3 +118,63 @@ class Transform:
             else:
                 x1, y1 = x, y
                 c1 = Transform._region_code(x1, y1, xmin, ymin, xmax, ymax)
+
+    @staticmethod
+    def sutherland_hodgman(points, xmin, ymin, xmax, ymax):
+        """
+        Recorta um polígono contra os limites de uma viewport.
+        'points' deve ser uma lista de listas/tuplas: [x, y, u, v, ...]
+        """
+        def clip_edge(pts, edge_type, limit):
+            new_pts = []
+            for i in range(len(pts)):
+                p1 = pts[i]
+                p2 = pts[(i + 1) % len(pts)]
+                
+                # Determina se os pontos estão "dentro" da borda
+                if edge_type == 0:   inside1, inside2 = p1[0] >= limit, p2[0] >= limit # Esquerda
+                elif edge_type == 1: inside1, inside2 = p1[0] <= limit, p2[0] <= limit # Direita
+                elif edge_type == 2: inside1, inside2 = p1[1] >= limit, p2[1] >= limit # Topo
+                else:                inside1, inside2 = p1[1] <= limit, p2[1] <= limit # Fundo
+
+                if inside1 and inside2:
+                    new_pts.append(p2)
+                elif inside1 and not inside2:
+                    new_pts.append(Transform._get_intersect(p1, p2, edge_type, limit))
+                elif not inside1 and inside2:
+                    new_pts.append(Transform._get_intersect(p1, p2, edge_type, limit))
+                    new_pts.append(p2)
+            return new_pts
+
+        result = points
+        if not result: return []
+        
+        # Aplica o recorte sequencialmente nas 4 bordas
+        result = clip_edge(result, 0, xmin)
+        result = clip_edge(result, 1, xmax)
+        result = clip_edge(result, 2, ymin)
+        result = clip_edge(result, 3, ymax)
+        return result
+
+    @staticmethod
+    def _get_intersect(p1, p2, edge_type, limit):
+        # Calcula a intersecção e interpola atributos extras (UVs)
+        x1, y1 = p1[0], p1[1]
+        x2, y2 = p2[0], p2[1]
+        dx, dy = x2 - x1, y2 - y1
+        
+        if edge_type < 2: # Vertical (Esquerda/Direita)
+            x = limit
+            t = (limit - x1) / dx if dx != 0 else 0
+            y = y1 + t * dy
+        else: # Horizontal (Topo/Fundo)
+            y = limit
+            t = (limit - y1) / dy if dy != 0 else 0
+            x = x1 + t * dx
+            
+        # Interpola U, V ou qualquer outro dado associado ao vértice
+        res = [x, y]
+        for i in range(2, len(p1)):
+            res.append(p1[i] + t * (p2[i] - p1[i]))
+            
+        return tuple(res)

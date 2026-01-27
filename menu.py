@@ -27,12 +27,41 @@ class Menu:
         self.uvs_scissors = self.drawer._generate_uvs(self.scissors)
 
     def draw(self):
+        # 1. Limpa o fundo do menu
         self.surface.fill(self.colors["black"])
+        # Incremento do ângulo apenas para as outras formas (pedra, papel, tesoura)
         self.angle += 0.02
 
-        background_shapes = [
-            (self.star, (640, 384), self.colors["gold"], 1, None, None),
+        # --- DESENHO DA ÚNICA ESTRELA (ESTÁTICA E COM GRADIENTE) ---
+        m_star = Transform.create_transformation()
+        # Escala para dar o tamanho desejado
+        m_star = Transform.multiply_matrices(Transform.scale(4, 4), m_star)
+        # Rotação removida para manter a estrela parada
+        # Posicionamento no centro da tela
+        m_star = Transform.multiply_matrices(Transform.translation(640, 384), m_star)
+        
+        star_transformed = Transform.apply_transformation(m_star, self.star)
 
+        # Cores estratégicas para um efeito de ouro polido
+        cor_brilho = self.colors["white"]       # Pontos de luz
+        cor_base = self.colors["gold"]         # Cor principal
+        cor_sombra = self.colors["orange"]      # Profundidade
+
+        # Definição das 10 cores para os vértices da estrela
+        cores_estrela = [
+            cor_brilho, cor_sombra,  # Ponta 1, Vale 1
+            cor_base,   cor_sombra,  # Ponta 2, Vale 2
+            cor_brilho, cor_sombra,  # Ponta 3, Vale 3
+            cor_base,   cor_sombra,  # Ponta 4, Vale 4
+            cor_brilho, cor_sombra   # Ponta 5, Vale 5
+        ]
+
+        # Preenchimento Gradiente e Contorno
+        self.drawer.scanline_fill_gradiente(star_transformed, cores_estrela)
+        self.drawer.draw_polygon(star_transformed, self.colors["white"])
+
+        # --- FORMAS DE FUNDO (SEM A ESTRELA NA LISTA) ---
+        background_shapes = [
             # Lado Esquerdo
             (self.stone, (200, 200), None, 1, self.uvs_stone, self.textures["stone"]),
             (self.paper, (200, 550), None, -1, self.uvs_paper, self.textures["paper"]),
@@ -48,14 +77,15 @@ class Menu:
 
         for model_points, pos, fill_color, direction, uvs, tex in background_shapes:
             m = Transform.create_transformation()
-            
             m = Transform.multiply_matrices(Transform.scale(4, 4), m)
+            # As formas decorativas continuam girando com self.angle
             m = Transform.multiply_matrices(Transform.rotation(self.angle * direction), m)
             m = Transform.multiply_matrices(Transform.translation(pos[0], pos[1]), m)
             
             transformed_pts = Transform.apply_transformation(m, model_points)
             self.drawer.draw_polygon(transformed_pts, self.colors["black"], fill_color, uvs, tex)
             
+        # 2. Desenha a Interface (Título e Botões)
         self._draw_ui()
 
 

@@ -271,3 +271,49 @@ class Primitive:
         height = y_max - y_min if y_max != y_min else 1
         
         return [((p[0] - x_min) / width, (p[1] - y_min) / height) for p in points]
+    
+
+    # No arquivo primitive.py
+
+    def interpola_cor(self, c1, c2, t):
+        """Calcula a cor intermediária entre c1 e c2 com base no fator t (0 a 1)."""
+        r = int(c1[0] + (c2[0] - c1[0]) * t)
+        g = int(c1[1] + (c2[1] - c1[1]) * t)
+        b = int(c1[2] + (c2[2] - c1[2]) * t)
+        return (max(0, min(r, 255)), max(0, min(g, 255)), max(0, min(b, 255)))
+
+    def scanline_fill_gradiente(self, pontos, cores):
+        """Preenche um polígono com gradiente de cores interpoladas por vértice."""
+        ys = [p[1] for p in pontos]
+        y_min, y_max = int(min(ys)), int(max(ys))
+        n = len(pontos)
+
+        for y in range(y_min, y_max):
+            intersecoes = []
+            for i in range(n):
+                p0, p1 = pontos[i], pontos[(i + 1) % n]
+                c0, c1 = cores[i], cores[(i + 1) % n]
+
+                if p0[1] == p1[1]: continue
+                if p0[1] > p1[1]:
+                    p0, p1 = p1, p0
+                    c0, c1 = c1, c0
+
+                if y < p0[1] or y >= p1[1]: continue
+
+                t = (y - p0[1]) / (p1[1] - p0[1])
+                x = p0[0] + t * (p1[0] - p0[0])
+                cor_y = self.interpola_cor(c0, c1, t)
+                intersecoes.append((x, cor_y))
+
+            intersecoes.sort(key=lambda i: i[0])
+            for i in range(0, len(intersecoes), 2):
+                if i + 1 < len(intersecoes):
+                    x_ini, cor_ini = intersecoes[i]
+                    x_fim, cor_fim = intersecoes[i + 1]
+                    if int(x_fim) == int(x_ini): continue
+
+                    for x in range(int(x_ini), int(x_fim) + 1):
+                        t_x = (x - x_ini) / (x_fim - x_ini)
+                        cor = self.interpola_cor(cor_ini, cor_fim, t_x)
+                        self.setPixel(x, y, cor)

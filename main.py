@@ -130,23 +130,56 @@ class App:
         self.on_cleanup()
 
     def draw_minimap(self):
-        v_xmin, v_ymin, v_xmax, v_ymax = 10, 10, 210, 130
-        world_window = (0, 0, self.weight, self.height)
+        # CONFIGURAÇÃO DA VIEWPORT 1: Mundo todo (ESQUERDA) 
+        v1_limits = (10, 10, 210, 130)
+        world_v1 = (0, 0, self.weight, self.height)
+        
+        # CONFIGURAÇÃO DA VIEWPORT 2: Zoom central (DIREITA) 
+        # Posicionada no canto superior direito
+        v2_limits = (1070, 10, 1270, 130)
+        zoom_size = 100 # Área capturada no centro do mundo
+        cx, cy = self.weight // 2, self.height // 2
+        world_v2 = (cx - zoom_size//2, cy - zoom_size//2, cx + zoom_size//2, cy + zoom_size//2)
 
-        pygame.draw.rect(self._display_surf, self.colors["black"], (v_xmin, v_ymin, 200, 120))
-        self.drawer.draw_rectangle(v_xmin, v_ymin, 200, 120, self.colors["white"])
+        # Matrizes de mapeamento
+        m_v1 = Transform.window_viewport(world_v1, v1_limits)
+        m_v2 = Transform.window_viewport(world_v2, v2_limits)
 
-        m_viewport = Transform.window_viewport(world_window, (v_xmin, v_ymin, v_xmax, v_ymax))
+        # Desenha fundos e molduras
+        for v_limits in [v1_limits, v2_limits]:
+            vx0, vy0, vx1, vy1 = v_limits
+            pygame.draw.rect(self._display_surf, self.colors["black"], (vx0, vy0, 200, 120))
+            self.drawer.draw_rectangle(vx0, vy0, 200, 120, self.colors["white"])
 
+        # Renderização das Entidades
         for ent in self.entities:
+            # Transformação de Mundo (comum a ambas)
             m_ent = Transform.create_transformation()
             m_ent = Transform.multiply_matrices(Transform.rotation(ent.angle), m_ent)
             m_ent = Transform.multiply_matrices(Transform.translation(ent.x, ent.y), m_ent)
-            
             pts_mundo = Transform.apply_transformation(m_ent, ent.model)
-            pts_mini = Transform.apply_transformation(m_viewport, pts_mundo)
+            
+            # UVs originais para textura
+            uvs_orig = self.drawer._generate_uvs(ent.model)
+            tex = self.textures.get(ent.type)
 
-            self.render_clipped_entity(pts_mini, ent.color, (v_xmin, v_ymin, v_xmax, v_ymax))
+            # Processa para cada Viewport
+            for m_view, v_limits in [(m_v1, v1_limits), (m_v2, v2_limits)]:
+                pts_view = Transform.apply_transformation(m_view, pts_mundo)
+                
+                # Prepara vértices [x, y, u, v] para o Sutherland-Hodgman
+                vertices = []
+                for i in range(len(pts_view)):
+                    vertices.append((pts_view[i][0], pts_view[i][1], uvs_orig[i][0], uvs_orig[i][1]))
+
+                # Recorte de Polígono (Sutherland-Hodgman)
+                pts_clipped = Transform.sutherland_hodgman(vertices, v_limits[0], v_limits[1], v_limits[2], v_limits[3])
+
+                if len(pts_clipped) >= 3:
+                    f_pts = [(v[0], v[1]) for v in pts_clipped]
+                    f_uvs = [(v[2], v[3]) for v in pts_clipped]
+                    # Desenha polígono texturizado recortado
+                    self.drawer.draw_polygon(f_pts, color=self.colors["white"], uvs=f_uvs, texture=tex)
 
     def render_clipped_entity(self, points, color, viewport_limits):
         v_xmin, v_ymin, v_xmax, v_ymax = viewport_limits
