@@ -22,6 +22,8 @@ class App:
         self.entities = []
         self.state = "OPENING" 
         self.menu = None
+        self.pause_options = ["Continuar", "Reiniciar", "Sair"]
+        self.pause_index = 0
 
     def on_init(self):
         pygame.init()
@@ -42,52 +44,21 @@ class App:
         pygame.time.delay(3000)
         self.state = "MENU"
 
-        for _ in range(25):
-            self.entities.append(
-                Entity("scissors", 
-                random.randint(100, 1100), 
-                random.randint(100, 600), 
-                self.colors)
-            )
-            self.entities.append(
-                Entity("paper", 
-                random.randint(100, 1100), 
-                random.randint(100, 600), 
-                self.colors)
-            )
-            self.entities.append(
-                Entity("stone", 
-                random.randint(100, 1100), 
-                random.randint(100, 600), 
-                self.colors)
-            )
-
+        self.reset_simulation()
         self._running = True
  
     def on_event(self, event):
         if event.type == pygame.QUIT:
             self._running = False
-        
+
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+            self._toggle_pause()
+
         if self.state == "MENU":
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    self.menu.navigate(-1)
+            self._handle_menu_events(event)
 
-                elif event.key == pygame.K_DOWN:
-                    self.menu.navigate(1)
-
-                elif event.key == pygame.K_SPACE:
-                    selection = self.menu.get_selection()
-
-                    if selection == "Iniciar":
-                        self.state = "SIMULATION"
-                        
-                    elif selection == "Sair":
-                        self._running = False
-
-        if self.state == "PAUSED":
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                self._running = False
+        elif self.state == "PAUSED":
+            self._handle_pause_events(event)
 
     def on_loop(self):   
         if self.state == "SIMULATION":
@@ -111,11 +82,7 @@ class App:
             self.draw_minimap()
 
             if self.state == "PAUSED":
-                font = pygame.font.SysFont("Arial", 50, bold=True)
-                winner = self.entities[0].type.upper()
-                text = font.render(f"{winner} VENCEU!!!  [Espaço para Sair]", True, self.colors["gold"])
-                rect = text.get_rect(center=(self.weight // 2, self.height // 2))
-                self._display_surf.blit(text, rect)
+                self._render_pause_overlay()
 
             pygame.display.flip()
 
@@ -135,7 +102,7 @@ class App:
         while( self._running ):
             if self.state == "SIMULATION" and not simulation_loaded:
                 simulation_loaded = True
-                mixer.stop_music
+                mixer.stop_music()
                 mixer.load_music("music/PJb7DdPD00.mp3")
             for event in pygame.event.get():
                 self.on_event(event)
@@ -143,6 +110,13 @@ class App:
             self.on_render()
         self.on_cleanup()
 
+    def reset_simulation(self):
+        self.entities = []
+        for _ in range(5):
+            self.entities.append(Entity("scissors", random.randint(100, 1100), random.randint(100, 600), self.colors))
+            self.entities.append(Entity("paper", random.randint(100, 1100), random.randint(100, 600), self.colors))
+            self.entities.append(Entity("stone", random.randint(100, 1100), random.randint(100, 600), self.colors))
+    
     def check_victory(self):
         if not self.entities:
             return False
@@ -153,24 +127,44 @@ class App:
                 return False 
         
         return True 
+
+    def _render_pause_overlay(self):
+        overlay = pygame.Surface(self.size)
+        overlay.set_alpha(128)
+        overlay.fill((0, 0, 0))
+        self._display_surf.blit(overlay, (0, 0))
+
+        font = pygame.font.SysFont("Arial", 30, bold=True)
+
+        if self.check_victory():
+            winner = self.entities[0].type.upper()
+            text = font.render(f"{winner} VENCEU!!! [Espaço para Sair]", True, self.colors["gold"])
+            rect = text.get_rect(center=(self.weight // 2, self.height // 2))
+            self._display_surf.blit(text, rect)
+        else:
+            for i, opt in enumerate(self.pause_options):
+                color = self.colors["sapphire"] if i == self.pause_index else self.colors["charcoal"]
+                bx, by = self.weight//2 - 100, self.height//2 - 50 + (i * 70)
+                self.drawer.draw_rectangle(bx, by, 200, 50, self.colors["white"], color)
+                
+                btn_txt = font.render(opt, True, self.colors["white"])
+                self._display_surf.blit(btn_txt, btn_txt.get_rect(center=(bx+100, by+25)))
     
     def draw_minimap(self):
-        # CONFIGURAÇÃO DA VIEWPORT 1: Mundo todo (ESQUERDA) 
+        # VIEWPORT 1
         v1_limits = (10, 10, 210, 130)
         world_v1 = (0, 0, self.weight, self.height)
         
-        # CONFIGURAÇÃO DA VIEWPORT 2: Zoom central (DIREITA) 
-        # Posicionada no canto superior direito
+        # VIEWPORT 2
         v2_limits = (1070, 10, 1270, 130)
-        zoom_size = 100 # Área capturada no centro do mundo
+        zoom_size = 100 
         cx, cy = self.weight // 2, self.height // 2
         world_v2 = (cx - zoom_size//2, cy - zoom_size//2, cx + zoom_size//2, cy + zoom_size//2)
 
-        # Matrizes de mapeamento
         m_v1 = Transform.window_viewport(world_v1, v1_limits)
         m_v2 = Transform.window_viewport(world_v2, v2_limits)
 
-        # Desenha fundos e molduras
+        # fundos e molduras
         for v_limits in [v1_limits, v2_limits]:
             vx0, vy0, vx1, vy1 = v_limits
             pygame.draw.rect(self._display_surf, self.colors["black"], (vx0, vy0, 200, 120))
@@ -178,32 +172,27 @@ class App:
 
         # Renderização das Entidades
         for ent in self.entities:
-            # Transformação de Mundo (comum a ambas)
             m_ent = Transform.create_transformation()
             m_ent = Transform.multiply_matrices(Transform.rotation(ent.angle), m_ent)
             m_ent = Transform.multiply_matrices(Transform.translation(ent.x, ent.y), m_ent)
             pts_mundo = Transform.apply_transformation(m_ent, ent.model)
             
-            # UVs originais para textura
             uvs_orig = self.drawer._generate_uvs(ent.model)
             tex = self.textures.get(ent.type)
 
-            # Processa para cada Viewport
             for m_view, v_limits in [(m_v1, v1_limits), (m_v2, v2_limits)]:
                 pts_view = Transform.apply_transformation(m_view, pts_mundo)
                 
-                # Prepara vértices [x, y, u, v] para o Sutherland-Hodgman
                 vertices = []
                 for i in range(len(pts_view)):
                     vertices.append((pts_view[i][0], pts_view[i][1], uvs_orig[i][0], uvs_orig[i][1]))
 
-                # Recorte de Polígono (Sutherland-Hodgman)
                 pts_clipped = Transform.sutherland_hodgman(vertices, v_limits[0], v_limits[1], v_limits[2], v_limits[3])
 
                 if len(pts_clipped) >= 3:
                     f_pts = [(v[0], v[1]) for v in pts_clipped]
                     f_uvs = [(v[2], v[3]) for v in pts_clipped]
-                    # Desenha polígono texturizado recortado
+                    
                     self.drawer.draw_polygon(f_pts, color=self.colors["white"], uvs=f_uvs, texture=tex)
 
     def render_clipped_entity(self, points, color, viewport_limits):
@@ -220,7 +209,45 @@ class App:
             
             if visivel:
                 self.drawer.draw_line_bress(int(nx0), int(ny0), int(nx1), int(ny1), color)
+    
+    def _toggle_pause(self):
+        if self.state == "SIMULATION":
+            self.state = "PAUSED"
+            self.pause_index = 0
+        elif self.state == "PAUSED" and not self.check_victory():
+            self.state = "SIMULATION"
 
+    def _handle_menu_events(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                self.menu.navigate(-1)
+            elif event.key == pygame.K_DOWN:
+                self.menu.navigate(1)
+            elif event.key == pygame.K_SPACE:
+                selection = self.menu.get_selection()
+                if selection == "Iniciar":
+                    self.reset_simulation()
+                    self.state = "SIMULATION"
+                elif selection == "Sair":
+                    self._running = False
+
+    def _handle_pause_events(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE and self.check_victory():
+                self._running = False
+
+            if event.key == pygame.K_UP:
+                self.pause_index = (self.pause_index - 1) % len(self.pause_options)
+            elif event.key == pygame.K_DOWN:
+                self.pause_index = (self.pause_index + 1) % len(self.pause_options)
+            elif event.key == pygame.K_SPACE:
+                sel = self.pause_options[self.pause_index]
+                if sel == "Continuar": self.state = "SIMULATION"
+                elif sel == "Reiniciar":
+                    self.reset_simulation()
+                    self.state = "SIMULATION"
+                elif sel == "Sair": self.state = "MENU"
+    
     def load_textures(self):
         paths = {
             "table": "img/table.png",
