@@ -1,4 +1,5 @@
 import pygame
+import math
 from primitive import Primitive
 from transform import Transform
 
@@ -19,6 +20,8 @@ class Menu:
         self.scissors = [(-1, 5), (-10, 5), (-10, 15),(-1,20),(-10,20),(-10,40),(0,20),(10,40),(10,20),(1,20),(10,15),(10,5),(1,5),(0,20)]
         self.stone = [(10, -17), (20, 0), (10, 17), (-10, 17), (-20, 0), (-10, -17)]
 
+        self.star = self.create_star_points(0, 0, 30, 15)
+
         self.uvs_stone = self.drawer._generate_uvs(self.stone)
         self.uvs_paper = self.drawer._generate_uvs(self.paper)
         self.uvs_scissors = self.drawer._generate_uvs(self.scissors)
@@ -28,6 +31,8 @@ class Menu:
         self.angle += 0.02
 
         background_shapes = [
+            (self.star, (640, 384), self.colors["gold"], 1, None, None),
+
             # Lado Esquerdo
             (self.stone, (200, 200), None, 1, self.uvs_stone, self.textures["stone"]),
             (self.paper, (200, 550), None, -1, self.uvs_paper, self.textures["paper"]),
@@ -38,7 +43,7 @@ class Menu:
             
             # Centro (Topo e Baixo)
             (self.paper, (640, 100), None, 1, self.uvs_paper, self.textures["paper"]),
-            (self.scissors, (640, 600), self.colors["red"], -1, None, None)
+            (self.scissors, (640, 700), self.colors["red"], -1, None, None)
         ]
 
         for model_points, pos, fill_color, direction, uvs, tex in background_shapes:
@@ -86,3 +91,23 @@ class Menu:
 
     def get_selection(self):
         return self.options[self.selected_index]
+    
+    def create_star_points(self, cx, cy, out_radius, in_radius):
+        num_points = 5
+        points = []
+        # Uma estrela de 5 pontas tem 10 vértices (5 pontas + 5 vales)
+        total_vertices = num_points * 2
+        
+        for i in range(total_vertices):
+            # Alterna o raio entre externo e interno
+            r = out_radius if i % 2 == 0 else in_radius
+            
+            # Calcula o ângulo de cada vértice (em radianos)
+            # Subtraímos pi/2 para a primeira ponta ficar virada para cima
+            angle = (math.pi * i / num_points) - (math.pi / 2)
+            
+            x = cx + r * math.cos(angle)
+            y = cy + r * math.sin(angle)
+            points.append((x, y))
+            
+        return points
