@@ -60,7 +60,6 @@ class Entity:
         
         # Verifica se a entidade atual vence
         if rules[self.type].get(other.type, False):
-            # self vence, other se transforma e inverte trajetória
             other.type = self.type
             other.color = self._get_color_for_type(self.type, other.colors)
             other.model = self._get_model_for_type(self.type)
@@ -112,18 +111,14 @@ class Entity:
                     self._resolve_collision(other)
 
     def draw(self, drawer, m_viewport=None):
-        # 1. Matriz de transformação do objeto (Mundo)
         m = Transform.create_transformation()
         m = Transform.multiply_matrices(Transform.rotation(self.angle), m)
         m = Transform.multiply_matrices(Transform.translation(self.x, self.y), m)
         
-        # 2. Aplicar transformação para o espaço do mundo
         pts_trans = Transform.apply_transformation(m, self.model)
         
-        # 3. Desenhar na tela principal
         drawer.draw_polygon(pts_trans, self.colors["black"], self.color)
 
-        # 4. Desenhar no minimapa (se a matriz de viewport for fornecida)
         if m_viewport is not None:
             pts_mini = Transform.apply_transformation(m_viewport, pts_trans)
             pts_mini_int = [(int(p[0]), int(p[1])) for p in pts_mini]

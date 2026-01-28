@@ -41,8 +41,8 @@ class OpenScene:
         e_fill = tuple(self.colors["deep_ocean"])
 
         # Pontos principais da coroa 
-        p_norte, p_sul = (cx, cy - 62 + off_y), (cx, cy + 62 + off_y)
-        p_leste, p_oeste = (cx + 125, cy + off_y), (cx - 125, cy + off_y)
+        p_north, p_south = (cx, cy - 62 + off_y), (cx, cy + 62 + off_y)
+        p_east, p_west = (cx + 125, cy + off_y), (cx - 125, cy + off_y)
         p_ne, p_se = (cx + 82, cy - 45 + off_y), (cx + 82, cy + 45 + off_y)
         p_so, p_no = (cx - 82, cy + 45 + off_y), (cx - 82, cy - 45 + off_y)
         
@@ -53,7 +53,7 @@ class OpenScene:
         p_ponta_sel = (cx + 142, cy + 62 + off_y)
         p_culatra = (cx, cy + 200 + off_y)
 
-        oct_pts = [p_norte, p_ne, p_leste, p_se, p_sul, p_so, p_oeste, p_no]
+        oct_pts = [p_north, p_ne, p_east, p_se, p_south, p_so, p_west, p_no]
 
         self.drawer.draw_circunference_bress(cx, cy + off_y + 50, 180, b_color)
         self.drawer.draw_circunference_bress(cx, cy + off_y + 50, 160, b_color)
@@ -65,10 +65,10 @@ class OpenScene:
         self.drawer.draw_polygon(oct_pts, b_color)
 
         # triângulos da base da coroa
-        self.drawer.draw_triangle(p_oeste[0], p_oeste[1], p_so[0], p_so[1], p_ponta_oso[0], p_ponta_oso[1], b_color)
-        self.drawer.draw_triangle(p_so[0], p_so[1], p_sul[0], p_sul[1], p_ponta_sos[0], p_ponta_sos[1], b_color)
-        self.drawer.draw_triangle(p_sul[0], p_sul[1], p_se[0], p_se[1], p_ponta_sse[0], p_ponta_sse[1], b_color)
-        self.drawer.draw_triangle(p_se[0], p_se[1], p_leste[0], p_leste[1], p_ponta_sel[0], p_ponta_sel[1], b_color)
+        self.drawer.draw_triangle(p_west[0], p_west[1], p_so[0], p_so[1], p_ponta_oso[0], p_ponta_oso[1], b_color)
+        self.drawer.draw_triangle(p_so[0], p_so[1], p_south[0], p_south[1], p_ponta_sos[0], p_ponta_sos[1], b_color)
+        self.drawer.draw_triangle(p_south[0], p_south[1], p_se[0], p_se[1], p_ponta_sse[0], p_ponta_sse[1], b_color)
+        self.drawer.draw_triangle(p_se[0], p_se[1], p_east[0], p_east[1], p_ponta_sel[0], p_ponta_sel[1], b_color)
 
         # ponta do diamante
         self.drawer.draw_triangle(p_ponta_oso[0], p_ponta_oso[1], p_ponta_sos[0], p_ponta_sos[1], p_culatra[0], p_culatra[1], b_color)

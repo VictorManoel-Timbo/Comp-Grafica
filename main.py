@@ -112,7 +112,7 @@ class App:
 
     def reset_simulation(self):
         self.entities = []
-        for _ in range(5):
+        for _ in range(15):
             self.entities.append(Entity("scissors", random.randint(100, 1100), random.randint(100, 600), self.colors))
             self.entities.append(Entity("paper", random.randint(100, 1100), random.randint(100, 600), self.colors))
             self.entities.append(Entity("stone", random.randint(100, 1100), random.randint(100, 600), self.colors))
@@ -129,7 +129,7 @@ class App:
         return True 
 
     def _render_pause_overlay(self):
-        overlay = pygame.Surface(self.size)
+        overlay = pygame.Surface(self.size) 
         overlay.set_alpha(128)
         overlay.fill((0, 0, 0))
         self._display_surf.blit(overlay, (0, 0))
@@ -175,13 +175,13 @@ class App:
             m_ent = Transform.create_transformation()
             m_ent = Transform.multiply_matrices(Transform.rotation(ent.angle), m_ent)
             m_ent = Transform.multiply_matrices(Transform.translation(ent.x, ent.y), m_ent)
-            pts_mundo = Transform.apply_transformation(m_ent, ent.model)
+            pts_world = Transform.apply_transformation(m_ent, ent.model)
             
             uvs_orig = self.drawer._generate_uvs(ent.model)
             tex = self.textures.get(ent.type)
 
             for m_view, v_limits in [(m_v1, v1_limits), (m_v2, v2_limits)]:
-                pts_view = Transform.apply_transformation(m_view, pts_mundo)
+                pts_view = Transform.apply_transformation(m_view, pts_world)
                 
                 vertices = []
                 for i in range(len(pts_view)):
@@ -252,7 +252,8 @@ class App:
         paths = {
             "table": "img/table.png",
             "stone": "img/stone.png",
-            "paper": "img/paper.jpg"
+            "paper": "img/paper.jpg",
+            "scissor": "img/scissor.png"
         }
         
         self.textures = {}

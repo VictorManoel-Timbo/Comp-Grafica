@@ -121,10 +121,6 @@ class Transform:
 
     @staticmethod
     def sutherland_hodgman(points, xmin, ymin, xmax, ymax):
-        """
-        Recorta um polígono contra os limites de uma viewport.
-        'points' deve ser uma lista de listas/tuplas: [x, y, u, v, ...]
-        """
         def clip_edge(pts, edge_type, limit):
             new_pts = []
             for i in range(len(pts)):
@@ -172,7 +168,7 @@ class Transform:
             t = (limit - y1) / dy if dy != 0 else 0
             x = x1 + t * dx
             
-        # Interpola U, V ou qualquer outro dado associado ao vértice
+        # Interpola dado associado ao vértice
         res = [x, y]
         for i in range(2, len(p1)):
             res.append(p1[i] + t * (p2[i] - p1[i]))
