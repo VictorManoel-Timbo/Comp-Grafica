@@ -26,9 +26,11 @@ class Menu:
         self.uvs_paper = self.drawer._generate_uvs(self.paper)
         self.uvs_scissors = self.drawer._generate_uvs(self.scissors)
 
+        self.background_cache = self._create_gradient_background()
+
     def draw(self):
-        # 1. Limpa o fundo do menu
-        self.surface.fill(self.colors["black"])
+        
+        self.surface.blit(self.background_cache, (0, 0))
         # Incremento do ângulo apenas para as outras formas (pedra, papel, tesoura)
         self.angle += 0.02
 
@@ -115,6 +117,23 @@ class Menu:
             btn_text = font_button.render(option, True, self.colors["black"])
             btn_rect = btn_text.get_rect(center=(self.center_x, rect_y + self.button_height // 2))
             self.surface.blit(btn_text, btn_rect)
+
+    def _create_gradient_background(self):
+        # Cria uma superfície do tamanho da tela
+        bg = pygame.Surface((self.surface.get_width(), self.surface.get_height()))
+        drawer_bg = Primitive(bg) # Usa o Primitive para desenhar nesta nova superfície
+        
+        largura, altura = bg.get_width(), bg.get_height()
+        pontos = [(0, 0), (largura, 0), (largura, altura), (0, altura)]
+        
+        # Define as cores do degradê
+        cor_suave = self.colors["sky_blue"]
+        cor_forte = self.colors["navy_blue"]
+        cores = [cor_suave, cor_suave, cor_forte, cor_forte]
+        
+        # Desenha o scanline apenas UMA vez aqui
+        drawer_bg.scanline_fill_gradiente(pontos, cores)
+        return bg
 
     def navigate(self, direction):
         self.selected_index = (self.selected_index + direction) % len(self.options)
